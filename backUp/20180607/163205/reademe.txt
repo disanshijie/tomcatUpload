@@ -1,1 +1,0 @@
-D:/working/eyou/src/com/eyou/trader/resource/app/impl/ResourceApp.java

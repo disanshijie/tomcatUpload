@@ -1,5 +1,0 @@
-D:/working/eyou/src/com/eyou/trader/resource/app/impl/ResourceApp.java
-D:/working/eyou/src/com/eyou/trader/trader/app/impl/TraderApp.java
-D:/working/eyou/src/com/eyou/trader/trader/service/impl/TraderService.java
-D:/working/eyou/web/manager/trader/js/trader.js
-D:/working/eyou/web/manager/trader/trader.jsp
