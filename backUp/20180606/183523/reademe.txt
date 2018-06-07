@@ -1,0 +1,6 @@
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/trader/js/trader.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/trader/trader.jsp
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/js/addVoyage.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/src/com/eyou/trader/resource/app/impl/ResourceApp.java
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/src/com/eyou/trader/trader/app/impl/TraderApp.java
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/src/com/eyou/trader/trader/service/impl/TraderService.java

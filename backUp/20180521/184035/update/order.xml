@@ -1,0 +1,910 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.eyou.trader.order.domain.Order" >
+
+  <resultMap type="com.eyou.trader.order.domain.Order" id="orderMap">
+    <result column="trader_code" property="traderCode" jdbcType="VARCHAR" />
+    <result column="resource_code" property="resourceCode" jdbcType="VARCHAR" />
+    <result column="stock_code" property="stockCode" jdbcType="VARCHAR" />
+    <result column="resource_name" property="resourceName" jdbcType="VARCHAR" />
+    <result column="category_sub" property="categorySub" jdbcType="VARCHAR" />
+    <result column="provider_name" property="providerName" jdbcType="VARCHAR" />
+    <result column="op_id" property="opId" jdbcType="VARCHAR" />
+    <result column="op_name" property="opName" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="VARCHAR" />
+  </resultMap>
+  <select id="searchOrderDetailByCode" parameterType="com.eyou.trader.order.domain.Order" resultType="java.util.Map">
+	   SELECT code,
+         o.resource_code,
+         o.vid,
+         resource_name,
+         category,
+         category_sub,
+         provider_name,
+         o.price ,
+         o.pay_price,
+         o.apply_price,
+         o.trader_code,
+         customer_type,
+         book_type,
+         op_id,
+         op_name,
+         contact,
+         contact_phone,
+         email,
+         partner_code,
+         comment,
+         status ,
+         o.create_time,
+         oi.cruise_house_id,
+         oi.cruise_house_type,
+         oi.num
+	   FROM tb_order o
+	   left join tb_order_info oi
+	   ON o.code=oi.order_code
+	   WHERE o.code = #{code}
+  </select>
+  <!--更新订单状态  -->
+  <update id="convertOrderStatus">
+  	update tb_order 
+  		set status=#{status}
+  	where code=#{code}
+  </update>
+  <!-- 查询待取消的订单列表 -->
+  <select id="searchPreCancelOrders" resultType="com.eyou.trader.order.domain.Order">
+  	select
+      	o.code,o.customer_type customerType, o.resource_code resCode
+      	, o.trader_code traderCode,category_sub categorySub
+      	,o.save_date saveDate,o.create_time createTime,o.op_email opEmail,o.email email
+    from
+      	tb_order o
+   	where
+     	o.create_time <![CDATA[<=]]> #{startTime}
+     	and (o.pay_price = 0 or o.pay_price is null)
+     	and (o.status = 1 or o.status = 9 or o.status = 12)
+
+  </select>
+  <select id="searchOrderListForApprove" resultType="java.util.Map" 
+  					parameterType="com.eyou.trader.order.domain.Order">
+      select
+      	o.code, o.resource_code, o.stock_code, o.trader_code, o.resource_name, 
+      	o.category, o.category_sub, o.provider_name, o.price, o.pay_price,o.refund_price,o.apply_price,o.contact,o.contact_phone,
+      	o.op_id, o.op_name, o.status, o.comment, o.book_type,o.customer_type,
+      	DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time
+      from
+      	tb_order o
+      LEFT JOIN (SELECT id,order_code,MAX(create_time) create_time FROM tb_order_schedule GROUP BY order_code) os 
+      ON o.code = os.order_code		
+      where (o.status = 1 or o.status = 2 or o.status = 3 or o.status = 7 or o.status = 13 or o.status = 12)
+	  <if test="status!=0 and status!='' and status!=null ">
+		  and o.status = #{status}
+	  </if>
+      <if test="code!='' and code!= null ">
+      	and o.code = #{code}
+      </if>
+      <if test="traderCode != '' and traderCode != null ">
+      	and o.trader_code = #{traderCode}
+      </if>
+      <if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+      </if>
+      <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+      </if>
+      <if test="opName != '' and opName != null ">
+      	and o.op_name like concat('%', #{opName}, '%')
+      </if>
+      order by os.create_time DESC
+  </select>
+  <select id="searchOrderListForAccounts" resultType="java.util.Map" 
+  					parameterType="com.eyou.trader.order.domain.Order">
+      select
+      	o.code, o.resource_code, o.stock_code, o.trader_code, o.resource_name, 
+      	o.category, o.category_sub, o.provider_name, o.price, o.pay_price,
+      	o.op_id, o.op_name, o.status, o.comment,o.book_type,o.customer_type,
+      	DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time
+      from
+      	tb_order o
+      left join (SELECT id,order_code,MAX(create_time) create_time FROM tb_order_schedule GROUP BY order_code) os 
+      ON o.code = os.order_code		
+      where (o.status = 1 or o.status = 3)
+      <if test="status!=0 and status!= null and status!=27">
+      	and o.status = #{status}
+      </if>
+      <if test="code!='' and code!= null ">
+      	and o.code = #{code}
+      </if>
+      <if test="category != 0 and category != null ">
+      	and o.category = #{category}
+      </if>
+      <if test="resCode!='' and resCode!= null ">
+      	and o.resource_code = #{resCode}
+      </if>
+      <if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+      </if>
+      <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+      </if>
+      <if test="providerName != '' and providerName != null ">
+      	and o.provider_name like concat('%', #{providerName}, '%')
+      </if>
+      <if test="opName != '' and opName != null ">
+      	and o.op_name like concat('%', #{opName}, '%')
+      </if>
+      <if test="resName != '' and resName != null">
+      	and o.resource_name like concat('%', #{resName}, '%')
+      </if>
+      order by os.create_time DESC
+  </select>
+  <select id="searchAccounts" resultType="java.util.Map" 
+  					parameterType="com.eyou.trader.order.domain.Order">
+      select
+      	count(*) num,sum(o.price-o.pay_price) accounts
+      from
+      	tb_order o
+      where (o.status = 1 or o.status = 2 or o.status = 3 or o.status = 7)
+      	AND o.vid = #{vid}
+		<if test="resCode != '' and resCode != null">
+			AND o.resource_code = #{resCode}
+	  	</if>
+		<if test="bookType != '' and bookType != null">
+			AND o.book_type = #{bookType}
+	  	</if>
+		<if test="opId != '' and opId != null">
+			AND o.op_id= #{opId}
+	  	</if>
+	  	<if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+       </if>
+       <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+       </if>
+      GROUP BY o.resource_code
+  </select>
+  <select id="searchOrderList" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+      select
+      	o.code, o.resource_code, o.stock_code,o.vid, o.trader_code, o.partner_code,o.resource_name,
+      	o.category, o.category_sub, o.provider_name, o.price, o.pay_price,o.apply_price,o.refund_price,
+      	o.op_id, o.op_name, o.status, o.comment,o.book_type,o.customer_type,o.contact,o.contact_phone,SUM(oi.num) house_num,
+	  	SUM(oi.house_person_num*oi.num)person_num,
+      	DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time, DATE_FORMAT(o.save_date,"%Y-%m-%d") save_date
+      from
+      	tb_order o
+     <!-- LEFT JOIN (SELECT id,order_code,MAX(create_time) create_time FROM tb_order_schedule GROUP BY order_code) os
+      ON o.code = os.order_code	-->
+	  LEFT JOIN tb_order_info oi
+	  ON o.code = oi.order_code
+
+      where o.status != 6
+      <choose>
+	      <when test="status == 0 ">
+	      </when>
+	      <when test="status == -5 ">
+	      	and o.status <![CDATA[<>]]> 5
+	      </when>
+	      <when  test="status!=0 and status!= null and status!=27 and status!=15">
+	      	and o.status = #{status}
+	      </when>
+      </choose>
+	  <if test="statusSql == 15">
+		  and o.status = 1 or o.status = 3
+	  </if>
+      <if test="traderCode != '' and traderCode != null ">
+      	and o.trader_code = #{traderCode}
+      </if>
+      <if test="partnerCode != '' and partnerCode != null ">
+      	and o.partner_code = #{partnerCode}
+      </if>
+      <if test="opId != '' and opId != null ">
+      	and o.op_id = #{opId}
+      </if>
+      <if test="category != 0 and category != null ">
+      	and o.category = #{category}
+      </if>
+	  <if test="categorySub != 0 and categorySub != null ">
+		  and o.category_sub = #{categorySub}
+	  </if>
+      <if test="code!='' and code!= null ">
+      	and o.code = #{code}
+      </if>
+      <if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+      </if>
+      <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+      </if>
+      <if test="providerName != '' and providerName != null ">
+      	and o.provider_name like concat('%', #{providerName}, '%')
+      </if>
+      <if test="opName != '' and opName != null ">
+      	and o.op_name like concat('%', #{opName}, '%')
+      </if>
+      <if test="resName != '' and resName != null">
+      	and o.resource_name like concat('%', #{resName}, '%')
+      </if>
+	   GROUP BY oi.order_code
+       ORDER BY create_time DESC
+  </select>
+
+	<select id="searchMyShare" parameterType="com.eyou.trader.order.domain.Order" resultType="java.util.Map">
+		SELECT resource_name, price,  payment, contact, status
+		FROM tb_order
+		WHERE share_id=#{shareid}
+	</select>
+	<!--查询渠道订单列表-->
+	<select id="searchChannelOrderList" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+		select
+		o.code, o.resource_code, o.stock_code,o.vid, o.trader_code, o.partner_code,o.resource_name,
+		o.category, o.category_sub, o.provider_name, o.price, o.pay_price,o.apply_price,
+		o.op_id, o.op_name, o.status, o.comment,o.book_type,o.customer_type,o.contact,o.contact_phone,o.dc,o.partner_code partnerCode,
+		DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time
+		from
+		tb_order o
+		LEFT JOIN (SELECT id,order_code,MAX(create_time) create_time FROM tb_order_schedule GROUP BY order_code) os
+		ON o.code = os.order_code
+		where o.provider_name like concat('%', #{providerName}, '%') and partner_code IS NOT NULL OR dc IS NOT NULL
+		<if test="status != '' and status != null">
+			and o.status = #{status}
+		</if>
+		<if test="traderCode != '' and traderCode != null ">
+			and o.trader_code = #{traderCode}
+		</if>
+		<if test="partnerCode != '' and partnerCode != null ">
+			and o.partner_code = #{partnerCode}
+		</if>
+		<if test="opId != '' and opId != null ">
+			and o.op_id = #{opId}
+		</if>
+		<if test="category != 0 and category != null ">
+			and o.category = #{category}
+		</if>
+		<if test="categorySub != 0 and categorySub != null ">
+			and o.category_sub = #{categorySub}
+		</if>
+		<if test="code!='' and code!= null ">
+			and o.code = #{code}
+		</if>
+		<if test="startTime != '' and startTime != null ">
+			and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+		</if>
+		<if test="endTime != '' and endTime != null ">
+			and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+		</if>
+
+		<if test="opName != '' and opName != null ">
+			and o.op_name like concat('%', #{opName}, '%')
+		</if>
+		<if test="resName != '' and resName != null">
+			and o.resource_name like concat('%', #{resName}, '%')
+		</if>
+		ORDER BY os.create_time DESC
+	</select>
+	<!--查询直客订单-->
+	<select id="clientOrderInfo" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+		select
+		o.code, o.resource_code, o.stock_code, o.trader_code, o.partner_code,o.resource_name,
+		o.category, o.category_sub, o.provider_name, o.price, o.pay_price,o.apply_price,
+		o.op_id, o.op_name, o.status, o.comment,o.book_type,o.customer_type,o.contact,o.contact_phone,
+		DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time
+		from
+		tb_order o
+		where o.op_name=#{opName}
+		ORDER BY create_time DESC
+	</select>
+
+	<!--查找所有第三方订单  -->
+  <select id="searchAllPartnerOrder" resultType="java.util.Map" 
+  					parameterType="com.eyou.trader.order.domain.Order">
+  					
+  	  SELECT ou.*, p.p_name partner_name FROM 
+       (SELECT
+      	o.code, o.resource_code, o.stock_code, o.trader_code, o.partner_code,o.resource_name, 
+      	o.category, o.category_sub, o.provider_name, o.price, o.pay_price,
+      	o.op_id, o.op_name, o.status, o.comment,  o.contact, o.contact_phone,
+      	DATE_FORMAT(o.create_time, '%Y-%m-%d %T') create_time
+      FROM
+      	tb_order o 
+      WHERE  o.status = 9
+		      <if test="code!='' and code!= null ">
+		      	and o.code = #{code}
+		      </if>
+		      <if test="partnerCode!='' and partnerCode!= null ">
+		      	and partner_code = #{partnerCode}
+		      </if>
+		      <if test="startTime != '' and startTime != null ">
+		      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+		      </if>
+		      <if test="endTime != '' and endTime != null ">
+		      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+		      </if>
+		      order by
+		      	o.create_time desc
+      
+      ) ou LEFT JOIN tb_partner p
+      ON ou.partner_code = p.p_code
+      
+      
+  </select>
+  
+   <!--修改合作商备注信息  -->
+    <update id="updatePartnerMemo">
+  	update
+  		tb_partner 
+  	set
+  		memo = #{memo}
+  	where
+  		p_code = #{pCode}
+  </update>
+   <!--查找所有合作商信息  -->
+  <select id="searchPartnerList" resultType="java.util.Map">
+	select
+		p.p_code,p.p_name,p.memo,p.create_time
+	from
+		tb_partner p
+	order by
+		create_time 
+  </select>
+   <!--根据条件合作商信息  -->
+  <select id="searchPartnerListByName" parameterType="java.lang.String" resultType="java.lang.String">
+	select
+		p_code
+	from
+		tb_partner
+	where
+      	p_name = #{pName}
+	order by
+		create_time 
+  </select>
+  
+  <!-- 搜索所有分销商的订单 -->
+  <select id="searchAllOrderList" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+  	SELECT 
+  		o.code, o.resource_code, o.resource_name, o.category_sub, o.provider_name,o.op_id,o.op_name, 
+  		o.price, o.status, o.create_time, st.name trader_name
+	FROM 
+		tb_order o, tb_trader st
+	where
+		st.code = o.trader_code
+	  <if test="category != 0 and category != null ">
+      	and o.category = #{category}
+      </if>
+      <if test="code!='' and code!= null ">
+      	and o.code = #{code}
+      </if>
+      <if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+      </if>
+      <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+      </if>
+      <if test="status!=0 and status!= null ">
+      	and o.resource_code= #{resCode}
+      </if>
+      <if test="resCode != '' and resCode != null">
+      	and o.resource_code= #{resCode}
+      </if>
+      <if test="resName != '' and resName != null">
+      	and o.resource_name like concat('%', #{resName}, '%')
+      </if>
+      <if test="providerName != '' and providerName != null">
+      	and o.provider_name like concat('%', #{providerName}, '%')
+      </if>
+	  <if test="traderName != '' and traderName != null">
+		  and st.name like concat('%', #{traderName}, '%')
+	  </if>
+	order by
+		o.create_time
+  </select>
+  <!-- 插入订单详细信息  -->
+  <insert id="insertOrderInfo" parameterType="com.eyou.trader.order.domain.OrderInfo">
+  	insert into
+  		tb_order_info
+  		(id, order_code, resource_code, stock_code, cruise_house_id,cruise_house_type,house_person_num,trader_code, num, price,vid)
+  	values
+  		(#{id}, #{orderCode}, #{resCode}, #{stockCode}, #{cruiseHouseId}, #{cruiseHouseType}, #{housePersonNum},#{traderCode}, #{num}, #{price},#{vid})
+  </insert>
+  <!-- 插入订单操作详细信息  -->
+  <insert id="insertOrderSchedule" parameterType="com.eyou.trader.order.domain.OrderSchedule">
+  	insert into
+  		tb_order_schedule
+  		(id, order_code, status, op_id, op_name, op_unit_price, op_num, op_price, memo)
+  	values
+  		(UUID(), #{orderCode}, #{status}, #{opId}, #{opName}, #{opUnitPrice}, #{opNum},#{opPrice},#{memo})
+  </insert>
+  <!-- 搜索下属分销商的订单 
+  <select id="searchSubTraderOrderList" resultType="java.util.Map">
+  	SELECT 
+  		o.code, o.resource_code, o.resource_name, o.category_sub, o.provider_name, 
+  		o.price, o.status, o.create_time, st.name trader_name
+	FROM tb_order o, (
+		SELECT CODE, p_code, NAME, paths FROM (
+	
+		     SELECT CODE, p_code, NAME,
+				@le:= IF (p_code = 0 ,0,  
+				 IF( LOCATE( CONCAT('|',p_code,':'),@pathlevel)   > 0  ,      
+					  SUBSTRING_INDEX( SUBSTRING_INDEX(@pathlevel,CONCAT('|',p_code,':'),-1),'|',1) +1
+				,@le+1) ) levels
+			
+				, @pathlevel:= CONCAT(@pathlevel,'|',CODE,':', @le ,'|') pathlevel
+		     
+			      , @pathnodes:= IF( p_code =0,',0', 
+				   CONCAT_WS(',',
+				   IF( LOCATE( CONCAT('|',p_code,':'),@pathall) > 0  , 
+				       SUBSTRING_INDEX( SUBSTRING_INDEX(@pathall,CONCAT('|',p_code,':'),-1),'|',1)
+				      ,@pathnodes ) ,p_code  ) ) paths
+			      
+				,@pathall:=CONCAT(@pathall,'|',CODE,':', @pathnodes ,'|') pathall 
+		    
+			FROM tb_trader, 
+					(SELECT @le:=0,@pathlevel:='', @pathall:='',@pathnodes:='') vv
+			ORDER BY  p_code, CODE) s_trader
+			where s_trader.paths like concat('%,', #{traderCode}, '%')
+			<if test="traderName != '' and traderName != null ">
+		      	and s_trader.NAME like concat('%', #{traderName}, '%')
+		    </if>
+		ORDER BY CODE) st
+	WHERE
+		st.code = o.trader_code
+	  <if test="category != 0 and category != null ">
+      	and o.category = #{category}
+      </if>
+      <if test="code!='' and code!= null ">
+      	and o.code = #{code}
+      </if>
+      <if test="startTime != '' and startTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+      </if>
+      <if test="endTime != '' and endTime != null ">
+      	and DATE_FORMAT(o.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+      </if>
+      <if test="status!=0 and status!= null ">
+      	and o.status = #{status}
+      </if>
+      <if test="resName != '' and resName != null">
+      	and o.resource_name like concat('%', #{resName}, '%')
+      </if>
+  </select> -->
+  <select id="searchSubTraderOrderList" resultType="java.util.Map">
+  	select o.code, o.resource_code,o.vid, o.resource_name, o.category_sub, o.provider_name,o.op_id,o.op_name, 
+  		o.price, o.status, DATE_FORMAT(o.create_time, "%Y-%m-%d %T") create_time, st.name trader_name
+    from tb_order o,tb_trader st
+    where o.trader_code  = st.code and trader_code in (
+		select code from tb_trader WHERE p_code = #{traderCode}
+	)
+	<if test="resCode != '' and resCode != null">
+      	and o.resource_code= #{resCode}
+    </if>
+  </select>
+  <select id="searchSaleManList" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+  	select DISTINCT op_id,op_name 
+    from tb_order 
+    where 1=1
+    <if test="vid != null and vid !=''">
+		AND vid = #{vid}
+	</if>
+  </select>
+  <update id="updateOrderStatus" parameterType="com.eyou.trader.order.domain.Order">
+  	update
+  		tb_order
+	  <trim prefix="set" suffixOverrides=",">
+		  <if test="status != null">
+			  status = #{status},
+		  </if>
+		  <if test="payPrice != null and payPrice !=''">
+			  pay_price = #{payPrice},
+		  </if>
+		  <if test="applyPrice != null and applyPrice !=''">
+			  apply_price = #{applyPrice},
+		  </if>
+		  <if test="price != null and price !=''">
+			  price = #{price},
+		  </if>
+		  <if test="createTime != null and createTime !=''">
+			  create_time = #{createTime},
+		  </if>
+		  <if test="comment != null">
+			  comment = #{comment},
+		  </if>
+	  </trim>
+  	where
+  		code = #{code}
+  </update>
+  <select id="searchOrderDetail" resultType="com.eyou.trader.order.domain.Order">
+  	 select
+      	o.code, o.resource_code resourceCode, o.trader_code traderCode, o.resource_name resName, 
+      	o.category, o.category_sub categorySub, o.provider_name providerName, o.price, 
+      	o.op_id opId, o.op_name opName, o.status, DATE_FORMAT(o.create_time, '%Y-%m-%d %T') createTime
+      from
+      	tb_order o
+      where
+      	o.code = #{code}
+  </select>
+  <select id="searchOrderCustomer" resultType="java.util.Map"
+  				parameterType="com.eyou.trader.order.domain.Order">
+  	select
+  		id, order_code, user_id, username, pinyin_fname,pinyin_lname, gender, birthday, born_province,
+	       	passport,nationality, passport_province, passport_date,valid_date, price,user_type,phone,
+	       	identity_card,memo,house_type,bus_price,insurance_price
+  	from
+  		tb_order_user
+  	where
+  		order_code = #{code}
+  		ORDER BY house_type
+  </select>
+	<!--订单详情-->
+	<select id="searchOrderSchedule" resultType="java.util.Map"
+			parameterType="com.eyou.trader.order.domain.Order">
+		select
+		id, order_code, status, memo, op_id, op_name, op_unit_price, op_num ,op_price, DATE_FORMAT(create_time, '%Y-%m-%d') DATE , DATE_FORMAT(create_time, '%T') TIME
+		from
+		tb_order_schedule
+		where
+		order_code = #{code}
+		order BY  create_time desc
+	</select>
+  <!--查找订单的商品信息  -->
+  <select id="searchOrderInfo" parameterType="com.eyou.trader.order.domain.Order" resultType="com.eyou.trader.order.domain.OrderInfo">
+  	select 
+  		order_code orderCode, vid, stock_code stockCode,cruise_house_id cruiseHouseId,house_person_num housePersonNum,num
+  		from tb_order_info
+  	where 
+  		order_code=#{code}
+  </select>
+  <!--删除订单的商品信息  -->
+  <delete id="deleteOrderInfo" parameterType="com.eyou.trader.order.domain.Order">
+  delete
+   	from tb_order_info
+   	where 
+   		order_code=#{code}
+  </delete>
+  <!--删除订单信息  -->
+  <delete id="deleteOrder" parameterType="com.eyou.trader.order.domain.Order">
+  	delete 
+  		from tb_order
+  	where 
+  		code=#{code}
+  </delete>
+  <!--插入订单信息  -->
+  <insert id="insertOrder" parameterType="com.eyou.trader.order.domain.Order">
+  	insert into tb_order
+  		(code,resource_code, stock_code, trader_code,resource_name,category,category_sub,provider_name,email,
+  		 price, pay_price, op_id, op_name, op_phone,op_email
+  		 , status, comment,contact,contact_phone,partner_code,customer_type,book_type,vid,dc,share_id,payment)
+  	values
+  		(#{code},#{resCode},#{stockCode},#{traderCode},#{resName},#{category},#{categorySub},#{providerName},#{email},
+  		 #{price}, #{payPrice},#{opId},#{opName},#{opPhone},#{opEmail}
+  		 ,#{status}, #{comment},#{contact},#{contactPhone},#{partnerCode},#{customerType},#{bookType},#{vid},#{dc},#{shareid},#{payment})
+  </insert>
+  <!--删除订单用户信息  -->
+  <delete id="deleteCustomInfoList" parameterType="com.eyou.trader.order.domain.Order">
+  	delete from tb_order_user where order_code=#{code}
+  </delete>
+  <!--编辑订单信息  -->
+  <!--<update id="editOrder" parameterType="com.eyou.trader.order.domain.Order">
+  	update tb_order
+  	    set
+  		<if test="status != null">
+  			status = #{status}
+  		</if>
+  		<if test="price != null">
+  			 ,price = #{price}
+  		</if>
+  		<if test="comment != null">
+  			 ,comment = #{comment}
+  		</if>
+  	where
+  		code=#{code}
+  </update>-->
+	<update id="editOrder" parameterType="com.eyou.trader.order.domain.Order">
+		update tb_order
+		<trim prefix="set" suffixOverrides=",">
+			<if test="status != null">
+				status = #{status},
+			</if>
+			<if test="refundPrice != null">
+				refund_price = #{refundPrice},
+			</if>
+			<if test="payPrice != null and payPrice !=''">
+				pay_price = #{payPrice},
+			</if>
+			<if test="applyPrice != null and applyPrice !=''">
+				apply_price = #{applyPrice},
+			</if>
+			<if test="price != null and price !=''">
+				price = #{price},
+			</if>
+			<if test="saveDate != null and saveDate != ''">
+				save_date = #{saveDate}
+			</if>
+			<if test="comment != null">
+				comment = #{comment},
+			</if>
+		</trim>
+		where
+		code=#{code}
+	</update>
+  <!--查询订单中有多少人  -->
+  <select id="searchOrderPersonNum" resultType="java.lang.Integer">
+  	select count(*) from tb_order_user where order_code=#{code}
+  </select>
+  <!--批量插入消费者信息  -->
+  <insert id="insertCustomInfoList" parameterType="list">
+  	insert into 
+  		tb_order_user
+	       (id, order_code, user_id, username, pinyin_fname, pinyin_lname, gender, 
+	       	birthday, born_province,
+	       	passport, passport_province, passport_date, price)
+	  values
+    <foreach collection="list" item="item" index="index" separator="," >
+       <trim prefix="(" suffix=")" suffixOverrides="," >       
+            UUID(), #{item.orderCode}, #{item.userId}, #{item.username}, #{item.pinyinFname}, #{item.pinyinLname}, #{item.gender}, 
+            #{item.birthday}, #{item.bornProvince},
+            #{item.passport}, #{item.passportProvince}, #{item.passportDate}, #{item.price}
+       </trim>
+    </foreach>
+  </insert>
+  <select id="selectCustomerInfoByCruise" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.OrderUser">
+      SELECT * FROM 
+          (SELECT o.resource_code,o.trader_code,u.id,u.order_code,u.username,u.pinyin_lname,u.pinyin_fname,u.gender,u.birthday,
+             u.born_province,u.passport,u.passport_province,
+             u.passport_date 
+           FROM tb_order_user u,tb_order o      
+           WHERE o.code = u.order_code) t
+      WHERE t.resource_code =#{resCode} 
+            <if test="username != '' and username != null">
+      	        and t.username = #{username}
+            </if>
+		    <if test="passport != '' and passport != null">
+		        and t.passport = #{passport}
+		    </if>
+		    <if test="traderCode != '' and traderCode != null">
+		        and t.trader_code = #{traderCode}
+		    </if>           
+  </select>
+  <insert id="saveCustomInfoList" parameterType="list">              
+     insert into 
+       tb_order_user
+	       (id,order_code,username,pinyin_fname, pinyin_lname,gender,birthday,born_province,
+	       passport,passport_province,passport_date, price,user_type,identity_card,nationality,valid_date,memo,phone,house_type,bus_price,insurance_price,order_info_id)
+	  	  values
+       <foreach collection="list" item="item" index="index" separator="," >
+       <trim prefix="(" suffix=")" suffixOverrides="," >
+            UUID(),
+            #{item.orderCode},      
+            #{item.username},
+            #{item.pinyinFname}, 
+            #{item.pinyinLname},
+            #{item.gender},
+            #{item.birthday},
+            #{item.bornProvince},
+            #{item.passport},
+            #{item.passportProvince},
+            #{item.passportDate},
+            #{item.price},
+		    #{item.userType},
+		    #{item.identityCard},
+		    #{item.nationality},
+		    #{item.validDate},
+		    #{item.memo},
+		    #{item.phone},
+		    #{item.houseType},
+		    #{item.busPrice},
+		    #{item.insurancePrice},
+		    #{item.orderInfoId}
+       </trim>
+    </foreach>
+  </insert>    
+  <!--删除订单用户信息  -->
+  <delete id="delectOrderUserById" parameterType="com.eyou.trader.order.domain.OrderUser">
+  	delete 
+  		from tb_order_user
+  	where 
+  		id=#{id}
+  </delete>
+  <!--更新订单用户信息  -->
+  <update id="updateOrderUserById" parameterType="com.eyou.trader.order.domain.OrderUser">
+  	update 
+  		tb_order_user
+  	set 
+  		username=#{username},user_type=#{userType},phone=#{phone},identity_card=#{identityCard},pinyin_fname=#{pinyinFname},pinyin_lname=#{pinyinLname},
+  		gender=#{gender},memo=#{memo},birthday=#{birthday},born_province=#{bornProvince},passport=#{passport},passport_province=#{passportProvince},
+  		passport_date=#{passportDate},valid_date=#{validDate},nationality=#{nationality},house_type=#{houseType},bus_price=#{busPrice},insurance_price=#{insurancePrice}
+    where 
+        id=#{id}
+  </update>
+  <!--查询订单用户信息  -->
+  <select id="selectOrderUserById" parameterType="com.eyou.trader.order.domain.OrderUser" resultType="java.util.Map">
+  	select
+  	    id,order_code,username,user_type,phone,identity_card,passport,gender,memo,pinyin_lname,pinyin_fname,birthday,born_province,house_type,nationality,passport_province,passport_date,valid_date,bus_price,insurance_price
+    from 
+        tb_order_user
+  	where 
+  		id=#{id}
+  </select>
+	<!--根据订单号查询游轮对应的房型列表-->
+	<select id="searchCruiseHouseListByOrderCode" resultType="java.util.Map">
+<!-- 		SELECT oi.cruise_house_id,ch.house_type,ch.house_person_num,oi.num,oi.price,oi.apply_price,o.vid,oi.id -->
+		SELECT oi.cruise_house_id,oi.cruise_house_type house_type,oi.house_person_num,oi.num,oi.price,oi.apply_price,o.vid,oi.id
+			FROM tb_order o
+			LEFT JOIN tb_order_info oi ON o.code = oi.order_code
+			LEFT JOIN tb_cruise_house ch ON oi.cruise_house_id =  ch.id
+			WHERE o.code=#{code}
+			order by house_type
+	</select>
+	<!--根据订单状态查出订单数量-->
+	<select id="searchOrderCountByStatus" parameterType="com.eyou.trader.order.domain.Order" resultType="java.util.Map">
+		SELECT COUNT(*) COUNT ,STATUS,trader_code FROM tb_order WHERE STATUS = 1  AND trader_code=#{traderCode}
+		UNION
+		SELECT COUNT(*),STATUS,trader_code  FROM tb_order WHERE STATUS = 11 AND trader_code=#{traderCode}
+		UNION
+		SELECT COUNT(*),STATUS,trader_code  FROM tb_order WHERE STATUS = 2 AND trader_code=#{traderCode}
+		UNION
+		SELECT COUNT(*),STATUS,trader_code  FROM tb_order WHERE STATUS = 7 AND trader_code=#{traderCode}
+	</select>
+	<!--今日收客人数-->
+	<select id="dayGusetInfo" parameterType="java.lang.String" resultType="java.lang.Long">
+		SELECT SUM(COUNT) dayGuest
+		FROM( SELECT num*house_person_num COUNT FROM tb_order_info WHERE trader_code=#{traderCode} AND DATE_FORMAT(create_time,'%Y-%m-%d') = DATE_FORMAT(NOW(),'%Y-%m-%d')) t
+	</select>
+	<!--本月收客人数-->
+	<select id="monGusetInfo" parameterType="java.lang.String" resultType="java.lang.Long">
+		SELECT SUM(COUNT) monGuest
+		FROM( SELECT num*house_person_num COUNT FROM tb_order_info WHERE trader_code=#{traderCode} AND DATE_FORMAT(create_time,'%Y-%m') = DATE_FORMAT(NOW(),'%Y-%m')) t
+	</select>
+	<!--今日营业额、订单数-->
+	<select id="dayTurnOver" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+		SELECT SUM(price) dayTurnOver,count(*) dayOrder
+		FROM tb_order
+		WHERE  DATE_FORMAT(create_time,'%Y-%m-%d') = DATE_FORMAT(NOW(),'%Y-%m-%d')
+		<if test="traderCode !='' and traderCode != null">
+			and tb_order.trader_code = #{traderCode}
+		</if>
+	</select>
+	<!--本月营业额、订单数-->
+	<select id="monthTurnOver" resultType="java.util.Map" parameterType="com.eyou.trader.order.domain.Order">
+		select sum(price) monthTurnOver,count(*) monthOrder
+		from tb_order
+		where  date_format(create_time,'%Y-%m') = DATE_FORMAT(now(),'%Y-%m')
+		<if test="traderCode !='' and traderCode != null">
+			and tb_order.trader_code = #{traderCode}
+		</if>
+	</select>
+	<!--本月未收账款-->
+	<select id="monthDebt" resultType="java.lang.Long" parameterType="com.eyou.trader.order.domain.Order">
+		select sum(price)-sum(pay_price) monthdebt
+		from tb_order
+		where  date_format(create_time,'%Y-%m') = DATE_FORMAT(now(),'%Y-%m')
+		<if test="traderCode !='' and traderCode != null">
+			and tb_order.trader_code = #{traderCode}
+		</if>
+	</select>
+	<!--今日未收账款-->
+	<select id="dayDebt" resultType="java.lang.Long" parameterType="com.eyou.trader.order.domain.Order">
+		SELECT SUM(o.price)-SUM(o.pay_price) dayDebt
+		FROM  tb_order o LEFT JOIN tb_resource r ON o.resource_code = r.code
+		WHERE  DATE_ADD(CURDATE(),INTERVAL 3 DAY) >= DATE(r.travel_date)
+		<if test="opId !='' and opId != null">
+			and o.op_id = #{opId}
+		</if>
+	</select>
+	<!--查询今日未收账款订单列表-->
+	<select id="searchDebtOrderList" parameterType="com.eyou.trader.order.domain.Order" resultType="java.util.Map">
+	SELECT
+		 tb_debt_order.code,
+		 tb_debt_order.resource_code,
+		 tb_debt_order.resource_name,
+		 tb_debt_order.category,
+		 tb_debt_order.category_sub,
+		 tb_debt_order.provider_name,
+		 tb_debt_order.price,
+		 tb_debt_order.pay_price,
+		 tb_debt_order.trader_code,
+		 tb_debt_order.customer_type,
+		 tb_debt_order.book_type,
+		 tb_debt_order.op_id,
+		 tb_debt_order.op_name,
+		 tb_debt_order.contact,
+		 tb_debt_order.contact_phone,
+		 tb_debt_order.partner_code,
+		 tb_debt_order.comment,
+		 tb_debt_order.status,
+		 tb_debt_order.create_time,
+		 tb_debt_order.travel_date
+		from (SELECT
+			o.code,
+			o.resource_code,
+			o.resource_name,
+			o.category,
+			o.category_sub,
+			o.provider_name,
+			o.price,
+			o.pay_price,
+			o.trader_code,
+			o.customer_type,
+			o.book_type,
+			o.op_id,
+			o.op_name,
+			o.contact,
+			o.contact_phone,
+			o.partner_code,
+			o.comment,
+			o.status,
+			DATE_FORMAT(o.create_time, "%Y-%m-%d") create_time,
+		    r.travel_date
+		    FROM
+		    tb_order o
+		    LEFT JOIN tb_resource r
+		    ON o.resource_code = r.code
+		WHERE DATE_Add(CURDATE(), INTERVAL 3 DAY) >= DATE(r.travel_date) AND o.status != 8)tb_debt_order
+		where 1=1
+		<if test="opId !='' and opId != null">
+			and tb_debt_order.op_id = #{opId}
+		</if>
+		<if test="status!='' and status !=null and status!=0">
+			AND tb_debt_order.status =#{status}
+		</if>
+
+		<if test="categorySub != 0 and categorySub != null ">
+			and tb_debt_order.category_sub = #{categorySub}
+		</if>
+		<if test="code!='' and code!= null ">
+			and tb_debt_order.code = #{code}
+		</if>
+		<if test="startTime != '' and startTime != null ">
+			and DATE_FORMAT(tb_debt_order.create_time, '%Y-%m-%d') <![CDATA[>=]]> #{startTime}
+		</if>
+		<if test="endTime != '' and endTime != null ">
+			and DATE_FORMAT(tb_debt_order.create_time, '%Y-%m-%d') <![CDATA[<=]]> #{endTime}
+		</if>
+		<if test="opName != '' and opName != null ">
+			and tb_debt_order.op_name like concat('%', #{opName}, '%')
+		</if>
+		<if test="resName != '' and resName != null">
+			and tb_debt_order.resource_name like concat('%', #{resName}, '%')
+		</if>
+	</select>
+
+	<!--统计不同房型的客户-->
+	<select id="getCustomerAmountByHouseType" parameterType="com.eyou.trader.order.domain.OrderUser" resultType="java.lang.Integer">
+		SELECT COUNT(*) FROM tb_order_user
+		WHERE order_code = #{orderCode}
+		<if test="houseType != '' and houseType != null">
+			AND house_type = #{houseType}
+		</if>
+
+	</select>
+
+	<update id="updateOrderInfo" parameterType="com.eyou.trader.order.domain.OrderInfo" >
+		update tb_order_info set apply_price = #{applyPrice} where order_code = #{orderCode} and vid=#{vid} and cruise_house_id=#{cruiseHouseId}
+	</update>
+<!-- 	更新info房型 -->
+	<update id="updateOrderInfoHouse" parameterType="com.eyou.trader.order.domain.OrderInfo" >
+		update tb_order_info set 
+		cruise_house_id=#{cruiseHouseId},cruise_house_type =#{cruiseHouseType},price =#{price}
+		,house_person_num=#{housePersonNum}, num=#{num}
+		where id=#{id}
+	</update>
+<!-- 	更新order价格 -->
+	<update id="updateOrderPrice" parameterType="com.eyou.trader.order.domain.Order" >
+		update tb_order set 
+		price=price+#{price},
+		apply_price=apply_price+#{applyPrice}
+		where code=#{code}
+	</update>
+	<!-- 确认单-->
+	<select id="searchOrderInfoAll" parameterType="com.eyou.trader.order.domain.Order" resultType="java.util.Map">
+		SELECT od.`code`,od.`resource_name`,od.resource_code,od.`op_name`,od.`contact`,od.`op_phone`
+		,DATE_FORMAT(od.create_time, "%Y-%m-%d %T") create_time
+		,od.pay_price,IFNULL(od.apply_price,od.price) price,od.customer_type
+		,oi.`cruise_house_type`,oi.num,oi.num*oi.`house_person_num` totalPerson,oi.`price`,IFNULL(oi.apply_price,oi.price) apply_price
+		,ou.`user_type`,ou.`username`
+		FROM tb_order od
+		LEFT JOIN tb_order_info oi
+		ON oi.`order_code`=od.`code`
+		LEFT JOIN tb_order_user ou
+		ON ou.`order_info_id`=oi.`id`
+		WHERE od.`code`=#{code}
+	</select>
+
+</mapper>

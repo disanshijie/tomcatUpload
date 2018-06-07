@@ -1,0 +1,6 @@
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/aliyun-sdk-oss-2.8.3.jar
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/flying-saucer-core-9.0.8.jar
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/flying-saucer-pdf-9.0.8.jar
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/httpclient-4.4.1.jar
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/httpcore-4.4.1.jar
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/WEB-INF/lib/itext-2.1.7.jar

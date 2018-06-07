@@ -1,0 +1,8 @@
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/src/com/eyou/trader/resource/domain/ProductVersion.java
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/src/com/eyou/trader/resource/domain/sqlMappers/resource.xml
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/js/addVoyage.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/js/version.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/js/ckhq.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/js/voyage.js
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/voyage.jsp
+D:/sunjinchao/data/eclipse/WorkSpace/Space3/eyou/web/manager/resource/addVoyage.jsp
