@@ -109,7 +109,7 @@ public class LinuxOperate {
 		String time2= sdf2.format(new Date());
 		File target=new File(BASEPATH+"/backUpLinux/"+time1+"/"+time2);
 		FileBox.mkDir(target);
-		FileBox.copyFile(new File(SAVE_PATH),target);
+		FileBox.copyFolder(new File(SAVE_PATH),target);
 	}
 	
 	/**
@@ -126,6 +126,7 @@ public class LinuxOperate {
 		String passwd=FileBox.getProperties(BASEPARAMS, "passwd");
 		try {
 			ChannelSftp sftp = SftpUtil.getSftpConnect(host, 22, username, passwd);
+			//ChannelSftp sftp = SftpUtil.getSftpConnect("59.110.224.8", 22, "root", "sjc@7ZXJPDZ");
 			List<String> targetFiles= createTargetFile();
 			
 			Integer fileNum=0;
@@ -134,11 +135,9 @@ public class LinuxOperate {
 				String name=FileBox.obtainFileName(source);//文件名称
 				String dest=sourcefile.getParent();//文件所在目录
 				
-				String sodir=SAVE_PATH_FILE.replaceAll("\\\\", "/");
-				dest=dest.replaceAll("\\\\", "/");
 				//更新的文件
 				System.out.println(dest+"/"+name);
-				SftpUtil.uploadFile(sodir+name,dest+"/",name,sftp);
+				SftpUtil.uploadFile(SAVE_PATH_FILE+name,dest,name,sftp);
 				//计数
 				fileNum +=1;
 			}

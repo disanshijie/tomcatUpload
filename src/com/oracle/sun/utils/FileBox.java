@@ -71,6 +71,33 @@ public class FileBox {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * 
+	* @Description:将文件或着文件夹复制到另一个文件夹中去
+	* @author sun
+	* @date  2018年6月8日 上午11:10:27
+	* @param sourceFile	源，文件夹或者文件
+	* @param dest	目标路径，必须是文件夹；如果source是文件则自动创建此文件
+	* @throws IOException
+	 */
+	public static void copyFolder(File sourceFile, File dest) throws IOException{
+		File destFile=new File(dest,sourceFile.getName());
+		
+		if(sourceFile.isFile()) {
+			destFile.createNewFile();
+			copyFileByStreams(sourceFile,destFile);
+		}else if(sourceFile.isDirectory()) {
+			destFile.mkdir();
+			File[] fileArray = sourceFile.listFiles();
+			for (File file : fileArray) {
+				/*如果source是文件夹，那么dest只能是文件夹
+				 * 如果source是文件，那么dest最好是文件
+				 */
+				copyFolder(file,destFile);
+			}
+		}
+	}
+	
 	public static void copyFileByStreams(File fromFile,File toFile) throws IOException {
 		InputStream input = null;    
 	    OutputStream output = null;  
@@ -92,35 +119,6 @@ public class FileBox {
 			
 	    }
 	}
-	
-	/**
-	* @Title: copyFile
-	* @Description: 递归复制文件方法
-	* @author sun
-	* @date  2018年5月2日 下午2:52:25
-	* @param file
-	* @param file2
-	 */
-    public static void copyFile(File file, File file2) {
-        // 当找到目录时，创建目录
-        if (file.isDirectory()) {
-            file2.mkdir();
-            File[] files = file.listFiles();
-            for (File file3 : files) {
-               // 递归
-               copyFile(file3, new File(file2, file3.getName()));
-            }
-            //当找到文件时
-        } else if (file.isFile()) {
-            File file3 = new File(file2.getAbsolutePath());
-            try {
-                file3.createNewFile();
-                copyFileUsingFileStreams(file.getAbsolutePath(), file3.getAbsolutePath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 	
 	//获取文件名
 	public static String obtainFileName(String path) {

@@ -15,7 +15,6 @@ public class LinuxStart {
 
 	public static void main(String[] args) throws IOException {
 		LinuxOperate lo=new LinuxOperate();
-		
 		lo.backUpFile();
 		lo.writeFile();
 		

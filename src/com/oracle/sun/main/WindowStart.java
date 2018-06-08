@@ -15,7 +15,8 @@ public class WindowStart {
 		
 	WindowOperate wo=new WindowOperate();
 		wo.deleUpFile(); //TODO
-		wo.copyFile();
+		//wo.copyFile();
+		wo.copyFormTomcat();
 		wo.backUpFile();
 
 	

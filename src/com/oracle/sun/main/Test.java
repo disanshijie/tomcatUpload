@@ -10,8 +10,10 @@ public class Test {
 	public static void main(String[] args) throws IOException {
 		
 		WindowOperate wo=new WindowOperate();
+		
 		wo.deleUpFile(); //TODO
-		wo.copyFile();
+		//wo.copyFile();
+		wo.copyFormTomcat();
 		wo.backUpFile();
 		
 		LinuxOperate lo=new LinuxOperate();

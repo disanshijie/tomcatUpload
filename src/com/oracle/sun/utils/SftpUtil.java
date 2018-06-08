@@ -2,7 +2,11 @@ package com.oracle.sun.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +30,9 @@ import com.jcraft.jsch.SftpException;
  * 1.1通过程序获取的路径 需要 =replaceAll("\\\\","/")<br>
  * 2. @since version-0.3 方法出现异常的时候，<del>会关闭sftp连接(但是不会关闭session和channel)</del>(del @ version 0.31)，异常会抛出<br>
  * @author Leon Lee
+ * 
+ * 缺陷 路劲必须是 /形式的
+ * 
  */
 public class SftpUtil {
 
@@ -60,9 +67,13 @@ public class SftpUtil {
             sshSession = jsch.getSession(username, host, port);
             sshSession.setPassword(password);
             Properties sshConfig = new Properties();
+            //设置第一次登陆的时候提示，可选值:(ask | yes | no) 
             sshConfig.put("StrictHostKeyChecking", "no");
             sshSession.setConfig(sshConfig);
             sshSession.connect();
+            //30秒连接超时 
+            //sshSession.connect(30000); 
+            //sshSession.setTimeout(30000); // 设置timeout时间  好像一样
             channel = sshSession.openChannel("sftp");
             channel.connect();
             SFTP_CHANNEL_POOL.put(key, channel);
@@ -194,17 +205,63 @@ public class SftpUtil {
 
     /**
      * 上传文件-sftp协议.
-     * @param srcFile 源文件
-     * @param dir 保存路径
+     * @param srcFile 源文件	必须是文件啊
+     * @param dir 保存路径		需要/开头和结尾
      * @param fileName 保存文件名
      * @param sftp sftp连接
      * @throws Exception 异常
      */
     public static void uploadFile(final String srcFile, final String dir, final String fileName, final ChannelSftp sftp)
             throws SftpException {
-        mkdir(dir, sftp); //可以递归
-        sftp.cd(dir);
+    	//处理Linux上路径
+    	if (StringUtils.isBlank(dir)) {
+        	System.out.println("Linux路径空");
+        	return ;
+        }
+        String md = dir.replaceAll("\\\\", "/");
+        if (md.indexOf("/") != 0 || md.length() == 1) {
+        	return ;
+        }
+        md=md.endsWith("/")?md:md+"/";
+        
+        mkdir(md, sftp); //可以递归
+        sftp.cd(md);
         sftp.put(srcFile, fileName);
+        // sftp.put(srcFile, new String(fileName.getBytes(),"UTF-8"));  //中文名称的  
+        //sftp.setFilenameEncoding("UTF-8");  
+    }
+    /**
+    * 上传文件-sftp协议.
+    * @author sun
+    * @date  2018年6月7日 下午6:22:20
+    * @param srcFile 源文件
+     * @param directory 保存路径
+     * @param sftp sftp连接
+     * @throws FileNotFoundException 
+     * @throws UnsupportedEncodingException 
+     * @throws Exception 异常
+     */
+    public static void uploadFile(File srcFile, String directory, ChannelSftp sftp)
+    		throws SftpException, FileNotFoundException, UnsupportedEncodingException {
+    	//File srcFile = new File(srcFile);
+    	if(srcFile.isFile()){
+    		System.out.println(srcFile.getAbsolutePath());
+    		System.out.println(directory);
+    		System.out.println(srcFile.getName());
+    		System.out.println("--------");
+    		uploadFile(srcFile.getAbsolutePath(), directory, srcFile.getName(),sftp);
+         }else{ //
+             File[] files = srcFile.listFiles();
+             for (File file2 : files) {
+                 String dir = file2.getAbsolutePath();
+                 if(file2.isDirectory()){
+                     //String str = dir.substring(dir.lastIndexOf(file2.separator));  
+                     //directory = FileUtil.normalize(directory + str);  
+                     directory =directory+"/"+file2.getName();
+                 }
+                 uploadFile(file2,directory,sftp);  
+             }  
+         } 
     }
 
     /**
@@ -231,12 +288,8 @@ public class SftpUtil {
      * @throws SftpException 异常
      */
     public static boolean mkdir(final String dir, final ChannelSftp sftp) throws SftpException {
-        if (StringUtils.isBlank(dir))
-            return false;
-        String md = dir.replaceAll("\\\\", "/");
-        if (md.indexOf("/") != 0 || md.length() == 1)
-            return false;
-        return mkdirs(md, sftp);
+    	
+        return mkdirs(dir, sftp);
     }
 
     /**
@@ -304,11 +357,11 @@ public class SftpUtil {
     public static void exit(final ChannelSftp sftp) {
         sftp.exit();
     }
-
     
     //测试
     public static void main(String[] args) throws Exception {
-    	test2();
+    	//test2();
+    	test3();
     }
     
     public void test1() throws Exception {
@@ -342,5 +395,15 @@ public class SftpUtil {
          uploadFile(pathString,dest,dest, sftp);
          exit(sftp);
          System.exit(0);
+    }
+    //上传文件
+    public static void test3() throws Exception {
+    	ChannelSftp sftp = SftpUtil.getSftpConnect("59.110.224.8", 22, "root", "sjc@7ZXJPDZ");
+    	String pathString = "D:\\opt\\tomcat-7.0\\webapps\\51Cruise\\WEB-INF";
+    	String dest = "/usr/games";
+    	//String name = "new33.txt";
+    	uploadFile(new File(pathString),dest,sftp);
+    	exit(sftp);
+    	System.exit(0);
     }
 }
